@@ -9,12 +9,40 @@ const searchRouter = require("./routes/Search.route");
 const { errorHandler, notFound } = require("./middlewares/ErrorHandler.middleware");
 const mongoSanitize = require("express-mongo-sanitize")
 const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const cors = require("cors");
+
 
 const app = express();
 
+app.set("trust proxy", 1); // add this near the top, before your rate limiters
+
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 100,                  // 100 requests per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." }
+});
+
+app.use(generalLimiter);
+
+app.use((req, res, next) => {
+  if (["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
+    const origin = req.get("origin");
+    if (origin !== process.env.FRONTEND_URL) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+  }
+  next();
+});
+
 app.use(express.json())
-// app.use(mongoSanitize())
+app.use((req, res, next) => {
+  if (req.body) req.body = mongoSanitize.sanitize(req.body);
+  if (req.params) req.params = mongoSanitize.sanitize(req.params);
+  next();
+});
 app.use(cookieParser());
 
 app.use(helmet());

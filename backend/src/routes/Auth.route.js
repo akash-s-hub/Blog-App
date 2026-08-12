@@ -5,12 +5,14 @@ const upload = require("../middlewares/Multer.middleware");
 const rateLimit = require("express-rate-limit");
 
 const authRouter = Router();
+
+// Strict limiter - for auth routes specifically
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
-  max: 20, // 20 requests per window per IP
+  windowMs: 15 * 60 * 1000,
+  max: 10,                   // 10 attempts per IP per window
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: "Too many attempts, please try again later" },
+  message: { error: "Too many attempts, please try again later." }
 });
 
 authRouter.post("/register", authLimiter, upload.single("avatar"), registerUser);
