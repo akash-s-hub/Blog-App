@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("../middlewares/AsyncHandler.middleware");
-const User = require("../models/user.model");
+const User = require("../models/User.model");
 const { uploadToCloudinary, deleteFromCloudinary } = require("../services/Cloudinary.service");
 const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
 const setAuthCookies = require("../utils/setCookies");
