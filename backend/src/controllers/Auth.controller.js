@@ -210,7 +210,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   );
 
   res.clearCookie("accessToken", { path: "/" });
-  res.clearCookie("refreshToken", { path: "/api/auth/refresh" });
+  res.clearCookie("refreshToken", { path: "/" });
 
   return res.status(200).json({ success: true, message: "Logged out successfully" });
 });
