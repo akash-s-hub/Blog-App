@@ -3,7 +3,7 @@ const asyncHandler = require("../middlewares/AsyncHandler.middleware");
 const User = require("../models/User.model");
 const { uploadToCloudinary, deleteFromCloudinary } = require("../services/Cloudinary.service");
 const { generateAccessToken, generateRefreshToken } = require("../utils/generateTokens");
-const setAuthCookies = require("../utils/setCookies");
+const { setAuthCookies, clearAuthCookies } = require("../utils/cookieOptions");
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password, bio } = req.body;
@@ -209,8 +209,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     { refreshToken: null }
   );
 
-  res.clearCookie("accessToken", { path: "/" });
-  res.clearCookie("refreshToken", { path: "/" });
+  clearAuthCookies(res);
 
   return res.status(200).json({ success: true, message: "Logged out successfully" });
 });
