@@ -103,8 +103,8 @@ const loginUser = asyncHandler(async (req, res) => {
       email: user.email,
       bio: user.bio,
       role: user.role,
-      avatarUrl: newUser.avatarUrl,
-      avatarPublicId: newUser.avatarPublicId
+      avatarUrl: user.avatarUrl,
+      avatarPublicId: user.avatarPublicId
     }
   })
 })
