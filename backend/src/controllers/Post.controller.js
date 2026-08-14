@@ -19,12 +19,31 @@ const parseTags = (tags) => {
   return [];
 };
 
-const getAllPosts = asyncHandler(async (req, res) => {
-  const posts = await Post.find();
-  return res.status(200).json({
+export const getAllPosts = asyncHandler(async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 10, 50); // cap it, don't trust client
+  const cursor = req.query.cursor; // last post's _id from previous page, or undefined for page 1
+
+  const filter = { status: "published" };
+  if (cursor) {
+    filter._id = { $lt: cursor }; // "give me posts created before this one"
+  }
+
+  const posts = await Post.find(filter)
+    .sort({ _id: -1 })       // newest first
+    .limit(limit + 1)        // fetch one extra to know if there's more
+    .populate("author", "username avatarUrl")
+    .populate("category", "name slug");
+
+  const hasMore = posts.length > limit;
+  const results = hasMore ? posts.slice(0, limit) : posts;
+  const nextCursor = hasMore ? results[results.length - 1]._id : null;
+
+  res.status(200).json({
     success: true,
     message: "posts fetched successfully",
-    posts
+    posts: results,
+    nextCursor,
+    hasMore,
   });
 });
 
@@ -36,7 +55,8 @@ const getPost = asyncHandler(async (req, res) => {
     throw new Error("no slug found");
   }
 
-  const post = await Post.findOne({ slug });
+  const post = await Post.findOne({ slug })
+    .populate("author", "username avatarUrl").populate("category", "name slug");;
 
   if (!post) {
     res.status(404);

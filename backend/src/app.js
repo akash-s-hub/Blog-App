@@ -15,8 +15,6 @@ const cors = require("cors");
 
 const app = express();
 
-app.set("trust proxy", 1); // add this near the top, before your rate limiters
-
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
   max: 100,                  // 100 requests per IP per window
@@ -24,6 +22,13 @@ const generalLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." }
 });
+
+app.set("trust proxy", 1); // add this near the top, before your rate limiters
+app.use(helmet());
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true, // required since you're using httpOnly cookies
+}));
 
 app.use(generalLimiter);
 
@@ -41,15 +46,10 @@ app.use(express.json())
 app.use((req, res, next) => {
   if (req.body) req.body = mongoSanitize.sanitize(req.body);
   if (req.params) req.params = mongoSanitize.sanitize(req.params);
+  if (req.query) req.query = mongoSanitize.sanitize(req.query);
   next();
 });
 app.use(cookieParser());
-
-app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true, // required since you're using httpOnly cookies
-}));
 
 app.use("/api/auth", authRouter);
 app.use("/api/posts", postRouter);

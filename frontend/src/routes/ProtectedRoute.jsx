@@ -1,24 +1,16 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import useAuth from "../context/useAuth";
-import Spinner from "../components/Spinner";
+import useAuth from "../hooks/useAuth";
+import Loader from "../components/common/Loader";
 
-const ProtectedRoute = () => {
-  const { user, loading } = useAuth();
+export default function ProtectedRoute() {
+  const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Spinner label="Checking your session" />
-      </div>
-    );
-  }
+  if (loading) return <Loader />;
 
-  if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <Outlet />;
-};
-
-export default ProtectedRoute;
+}

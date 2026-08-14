@@ -1,62 +1,58 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AuthContext } from "./AuthContext";
-import { getMe, logout as logoutRequest } from "../api/authApi";
+import { useState, useEffect, useCallback } from "react";
+import AuthContext from "./AuthContext";
+import { getCurrentUser, loginUser, logoutUser, registerUser } from "../api/auth.api";
 
-const normalizeUser = (user) => {
-  if (!user) {
-    return null;
-  }
-
-  return {
-    ...user,
-    avatarUrl: user.avatarUrl || user.avatar || "",
-  };
-};
-
-const AuthProvider = ({ children }) => {
+export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const checkAuth = useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    ; (async () => {
+      try {
+        const res = await getCurrentUser();
+        setUser(res.user);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
-    try {
-      const res = await getMe();
-      const nextUser = normalizeUser(res.data.user);
-      setUser(nextUser);
-      return nextUser;
-    } catch (error) {
-      setUser(null);
-      return null;
-    } finally {
-      setLoading(false);
-    }
+  const login = useCallback(async (credentials) => {
+    const res = await loginUser(credentials);
+    setUser(res.user);
+    return res;
+  }, []);
+
+  const register = useCallback(async (data) => {
+    const res = await registerUser(data);
+    setUser(res.user);
+    return res;
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await logoutRequest();
+      await logoutUser();
     } finally {
       setUser(null);
     }
   }, []);
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  const value = {
+    user,
+    isAuthenticated: !!user,
+    isAdmin: user?.role === "admin",
+    loading,
+    login,
+    register,
+    logout,
+    setUser,
+  };
 
-  const value = useMemo(
-    () => ({
-      user,
-      setUser,
-      loading,
-      checkAuth,
-      logout,
-    }),
-    [user, loading, checkAuth, logout]
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export default AuthProvider;
+}

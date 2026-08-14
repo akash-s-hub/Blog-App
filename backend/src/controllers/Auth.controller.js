@@ -52,7 +52,7 @@ const registerUser = asyncHandler(async (req, res) => {
     success: true,
     message: "user registered successfully",
     user: {
-      id: newUser._id,
+      _id: newUser._id,
       username: newUser.username,
       email: newUser.email,
       bio: newUser.bio,
@@ -98,12 +98,13 @@ const loginUser = asyncHandler(async (req, res) => {
     success: true,
     message: "user logged in successfully",
     user: {
-      id: user._id,
+      _id: user._id,
       username: user.username,
       email: user.email,
       bio: user.bio,
       role: user.role,
-      avatar: user.avatar
+      avatarUrl: newUser.avatarUrl,
+      avatarPublicId: newUser.avatarPublicId
     }
   })
 })

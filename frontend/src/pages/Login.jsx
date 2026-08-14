@@ -1,78 +1,71 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { login } from "../api/auth";
-import useAuth from "../context/useAuth";
+import { useForm } from "react-hook-form";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import useAuth from "../hooks/useAuth";
 
 export default function Login() {
-  const [form, setForm] = useState({ identifier: "", password: "" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { checkAuth } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm();
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
+  const onSubmit = async (data) => {
     try {
-      const res = await login(form);
-      setUser(res.data.user); // adjust if your login response shape differs from /auth/me
-      navigate("/");
+      await login(data);
+      toast.success("Welcome back!");
+      // send them back to wherever ProtectedRoute intercepted them, or home
+      const redirectTo = location.state?.from?.pathname || "/";
+      navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please try again.");
-    } finally {
-      setLoading(false);
+      toast.error(err.response?.data?.message || "Login failed");
     }
-  }
+  };
 
   return (
-    <div className="max-w-sm mx-auto mt-12">
-      <h1 className="text-2xl font-bold mb-6">Login</h1>
+    <div className="max-w-sm mx-auto mt-16 p-6 border rounded-lg">
+      <h1 className="text-xl font-bold mb-4">Login</h1>
 
-      {error && (
-        <div className="bg-red-50 text-red-700 text-sm px-4 py-2 rounded mb-4">
-          {error}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <input
+            type="text"
+            placeholder="Email or Username"
+            className="w-full border rounded px-3 py-2"
+            {...register("identifier", { required: "This field is required" })}
+          />
+          {errors.identifier && (
+            <p className="text-red-600 text-sm mt-1">{errors.identifier.message}</p>
+          )}
         </div>
-      )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="text"
-          name="identifier"
-          placeholder="Email"
-          value={form.identifier}
-          onChange={handleChange}
-          required
-          className="border border-gray-300 rounded px-3 py-2"
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
-          className="border border-gray-300 rounded px-3 py-2"
-        />
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full border rounded px-3 py-2"
+            {...register("password", { required: "Password is required" })}
+          />
+          {errors.password && (
+            <p className="text-red-600 text-sm mt-1">{errors.password.message}</p>
+          )}
+        </div>
+
         <button
           type="submit"
-          disabled={loading}
-          className="bg-gray-900 text-white py-2 rounded hover:bg-gray-700 disabled:opacity-50"
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white rounded py-2 disabled:opacity-50"
         >
-          {loading ? "Logging in..." : "Login"}
+          {isSubmitting ? "Logging in..." : "Login"}
         </button>
       </form>
 
-      <p className="text-sm mt-4">
-        Don't have an account?{" "}
-        <Link to="/register" className="underline">
-          Register
-        </Link>
+      <p className="text-sm mt-4 text-center">
+        No account? <Link to="/register" className="text-blue-600">Register</Link>
       </p>
     </div>
   );

@@ -1,43 +1,39 @@
-import { Route, Routes } from "react-router-dom";
-import Layout from "./components/Layout";
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/common/Navbar";
 import ProtectedRoute from "./routes/ProtectedRoute";
-import AdminRoute from "./routes/AdminRoute";
-import Feed from "./pages/Feed";
-import SearchResults from "./pages/SearchResults";
+
+import Home from "./pages/Home";
 import PostDetail from "./pages/PostDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Profile from "./pages/Profile";
 import CreatePost from "./pages/CreatePost";
 import EditPost from "./pages/EditPost";
-import AdminCategories from "./pages/AdminCategories";
+import UserProfile from "./pages/UserProfile";
+import EditProfile from "./pages/EditProfile";
+import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
 
-
-function App() {
+export default function App() {
   return (
-    <Layout>
+    <>
+      <Navbar />
       <Routes>
-        <Route path="/" element={<Feed />} />
-        <Route path="/search" element={<SearchResults />} />
+        <Route path="/" element={<Home />} />
         <Route path="/post/:slug" element={<PostDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/profile/:userId" element={<UserProfile />} />
+        <Route path="/search" element={<SearchResults />} />
 
+        {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/create" element={<CreatePost />} />
-          <Route path="/edit/:id" element={<EditPost />} />
-        </Route>
-
-        <Route element={<AdminRoute />}>
-          <Route path="/admin/categories" element={<AdminCategories />} />
+          <Route path="/create-post" element={<CreatePost />} />
+          <Route path="/edit-post/:id" element={<EditPost />} />
+          <Route path="/profile/edit" element={<EditProfile />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </Layout>
+    </>
   );
 }
-
-export default App

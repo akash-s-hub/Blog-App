@@ -5,67 +5,15 @@ const api = axios.create({
   withCredentials: true,
 });
 
-let refreshPromise = null;
-
-const shouldSkipRefresh = (config) =>
-  Boolean(config?.skipAuthRefresh) || config?.url?.includes("/auth/refresh");
-
-const shouldSkipRedirect = (config) => Boolean(config?.skipAuthRedirect);
-
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config || {};
-
-    if (
-      error.response?.status !== 401 ||
-      originalRequest._retry ||
-      shouldSkipRefresh(originalRequest)
-    ) {
-      return Promise.reject(error);
-    }
-
-    originalRequest._retry = true;
-
-    if (!refreshPromise) {
-      refreshPromise = api
-        .post("/auth/refresh", null, {
-          skipAuthRefresh: true,
-          skipAuthRedirect: true,
-        })
-        .finally(() => {
-          refreshPromise = null;
-        });
-    }
-
-    try {
-      await refreshPromise;
-      return api(originalRequest);
-    } catch (refreshError) {
-      if (!shouldSkipRedirect(originalRequest) && typeof window !== "undefined") {
-        window.location.assign("/login");
-      }
-
-      return Promise.reject(refreshError);
-    }
-  }
-);
-
-export default api; import axios from "axios";
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true, // sends httpOnly cookies (accessToken, refreshToken)
-});
-
 let isRefreshing = false;
-let queue = []; // requests waiting on a refresh in progress
+let refreshQueue = []; // holds { resolve, reject } for requests waiting on refresh
 
 function processQueue(error) {
-  queue.forEach(({ resolve, reject }) => {
-    error ? reject(error) : resolve();
+  refreshQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve();
   });
-  queue = [];
+  refreshQueue = [];
 }
 
 api.interceptors.response.use(
@@ -73,28 +21,32 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Only attempt refresh on 401, and only once per request
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Only try refresh on 401, and never for the refresh/login routes themselves
+    // (avoids infinite loop if refresh itself returns 401)
+    const isAuthRoute =
+      originalRequest.url?.includes("/auth/login") ||
+      originalRequest.url?.includes("/auth/refresh");
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       if (isRefreshing) {
-        // Another request already triggered a refresh — wait for it
+        // A refresh is already in flight — queue this request until it's done
         return new Promise((resolve, reject) => {
-          queue.push({ resolve, reject });
+          refreshQueue.push({ resolve, reject });
         })
           .then(() => api(originalRequest))
           .catch((err) => Promise.reject(err));
       }
 
-      originalRequest._retry = true;
+      originalRequest._retry = true; // prevent infinite retry loop
       isRefreshing = true;
 
       try {
-        await api.post("/auth/refresh");
+        await api.post("/auth/refresh"); // adjust path if yours differs
         processQueue(null);
-        return api(originalRequest); // retry the original request
+        return api(originalRequest); // retry the original failed request
       } catch (refreshError) {
         processQueue(refreshError);
-        // refresh itself failed — session is truly dead
-        window.location.href = "/login";
+        // refresh failed too — session is truly dead, let AuthContext handle logout
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

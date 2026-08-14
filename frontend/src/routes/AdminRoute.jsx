@@ -1,27 +1,13 @@
 import { Navigate, Outlet } from "react-router-dom";
-import useAuth from "../context/useAuth";
-import Spinner from "../components/Spinner";
+import useAuth from "../hooks/useAuth";
+import Loader from "../components/common/Loader";
 
-const AdminRoute = () => {
-  const { user, loading } = useAuth();
+export default function AdminRoute() {
+  const { isAdmin, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Spinner label="Checking admin access" />
-      </div>
-    );
-  }
+  if (loading) return <Loader />;
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (user.role !== "admin") {
-    return <Navigate to="/" replace />;
-  }
+  if (!isAdmin) return <Navigate to="/" replace />;
 
   return <Outlet />;
-};
-
-export default AdminRoute;
+}
