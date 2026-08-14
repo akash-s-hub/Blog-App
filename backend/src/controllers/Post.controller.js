@@ -19,7 +19,7 @@ const parseTags = (tags) => {
   return [];
 };
 
-export const getAllPosts = asyncHandler(async (req, res) => {
+const getAllPosts = asyncHandler(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 10, 50); // cap it, don't trust client
   const cursor = req.query.cursor; // last post's _id from previous page, or undefined for page 1
 
