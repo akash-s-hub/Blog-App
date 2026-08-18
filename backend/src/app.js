@@ -26,7 +26,10 @@ const generalLimiter = rateLimit({
 app.set("trust proxy", 1); // add this near the top, before your rate limiters
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: [
+    "http://localhost:5173",
+    process.env.FRONTEND_URL
+  ],
   credentials: true, // required since you're using httpOnly cookies
 }));
 
