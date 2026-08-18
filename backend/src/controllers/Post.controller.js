@@ -3,6 +3,7 @@ const asyncHandler = require("../middlewares/AsyncHandler.middleware");
 const Post = require("../models/Post.model");
 const Category = require("../models/Category.model");
 const { isAdmin } = require("../middlewares/Admin.middleware");
+const sanitizeHtml = require("../utils/sanitizeHtml");
 
 // Normalizes tags whether they arrive as:
 // - a comma-separated string:      "js,node,mongo"
@@ -80,7 +81,7 @@ const createPost = asyncHandler(async (req, res) => {
   }
 
   const trimmedTitle = typeof title === "string" ? title.trim() : title;
-  const trimmedContent = typeof content === "string" ? content.trim() : content;
+  const trimmedContent = typeof content === "string" ? sanitizeContent(content.trim()) : content;
   const parsedTags = parseTags(tags);
   const postCategory = await Category.findOne({ name: category });
 
@@ -131,8 +132,6 @@ const updatePost = asyncHandler(async (req, res) => {
     throw new Error("provide at least one field");
   }
 
-  const postCategory = await Category.findOne({ name: category });
-
   const post = await Post.findById(postId);
 
   if (!post) {
@@ -158,7 +157,7 @@ const updatePost = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("invalid content");
     }
-    post.content = content.trim();
+    post.content = sanitizeContent(content.trim());
   }
 
   if (tags) {
@@ -177,8 +176,13 @@ const updatePost = asyncHandler(async (req, res) => {
     post.tags = parsedTags;
   }
 
-  if (postCategory) {
-    post.category = postCategory;
+  let postCategory;
+  if (category) {
+    postCategory = await Category.findOne({ name: category });
+    if (!postCategory) {
+      res.status(400);
+      throw new Error("invalid category");
+    }
   }
 
   await post.save();

@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import { useEffect, useRef } from "react";
 import useInfinitePosts from "../hooks/useInfinitePosts";
 import PostCard from "../components/post/PostCard";

@@ -1,7 +1,5 @@
 import api from "./axios";
 
-// cursor/limit accepted now so switching on pagination later is a one-line change in Home.jsx,
-// not a rewrite of this file
 export const getPosts = async (params = {}) => {
   const res = await api.get("/posts", { params });
   return res.data;

@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     select: false,
-    minlength: [5, "minimum length is 5"]
+    minlength: [8, "minimum length is 8"]
   },
   avatarUrl: {
     type: String,
